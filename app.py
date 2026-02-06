@@ -161,6 +161,16 @@ if TEST_MODE:
 else:
     st.success("REAL PAYMENT MODE ENABLED")
 
+# ---------- DISPLAY ADDED ITEMS ----------
+total = 0
+
+for i, item in enumerate(st.session_state.items):
+    total += item["amount"]
+    st.markdown(f"• {item['name']} × {item['qty']} = ₹ {item['amount']}")
+
+st.markdown(f"### Total: ₹ {total}")
+
+
 
 # ==================================================
 # GENERATE QR
