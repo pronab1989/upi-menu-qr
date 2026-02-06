@@ -4,8 +4,8 @@
 APP_BASE_URL = "https://upi-menu-qr-trn2jqq8bhc79ktxox4g5e.streamlit.app"
 
 TEST_MODE = False
-# True  = Fake payment QR (testing)
-# False = Real UPI QR (production)
+# True  = fake payment QR (testing)
+# False = real UPI QR (production)
 
 
 # ==================================================
@@ -22,11 +22,15 @@ from datetime import date
 # ==================================================
 # PAGE CONFIG
 # ==================================================
-st.set_page_config("QR Menu", "📱", layout="centered")
+st.set_page_config(
+    page_title="QR Menu",
+    page_icon="📱",
+    layout="centered"
+)
 
 
 # ==================================================
-# CSS (CLASSIC CLEAN LOOK)
+# CSS (CLASSIC + MOBILE FRIENDLY)
 # ==================================================
 st.markdown("""
 <style>
@@ -66,7 +70,7 @@ st.markdown("""
 
 
 # ==================================================
-# HELPERS
+# HELPER FUNCTIONS
 # ==================================================
 def encode_data(data):
     return base64.urlsafe_b64encode(json.dumps(data).encode()).decode()
@@ -86,9 +90,10 @@ def generate_upi_qr(upi, amount):
 
 
 # ==================================================
-# ROUTING – CUSTOMER VIEW
+# ROUTING — CUSTOMER VIEW (QR SCAN)
 # ==================================================
 params = st.query_params
+
 if "menu" in params:
     data = decode_data(params["menu"])
 
@@ -106,7 +111,10 @@ if "menu" in params:
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown(f"<div class='total'>Total: ₹ {data['total']}</div>", unsafe_allow_html=True)
+    st.markdown(
+        f"<div class='total'>Total: ₹ {data['total']}</div>",
+        unsafe_allow_html=True
+    )
 
     st.markdown("<div class='pay'><b>Pay Using UPI</b><br>", unsafe_allow_html=True)
 
@@ -121,7 +129,7 @@ if "menu" in params:
 
 
 # ==================================================
-# SHOP OWNER PAGE
+# SHOP OWNER VIEW
 # ==================================================
 st.title("📱 QR Menu Generator")
 
@@ -129,67 +137,87 @@ shop = st.text_input("Shop Name")
 menu_date = st.date_input("Date", value=date.today())
 upi = st.text_input("UPI ID / Mobile Number")
 
-# ---------- ITEM LIST ----------
-st.subheader("Menu Items")
 
+# ==================================================
+# SESSION STATE (SAFE INITIALIZATION)
+# ==================================================
 if "items" not in st.session_state:
-    st.session_state.items = []
+    st.session_state["items"] = []
+
+
+# ==================================================
+# ADD ITEM SECTION
+# ==================================================
+st.subheader("Add Menu Item")
 
 col1, col2, col3 = st.columns(3)
-name = col1.text_input("Item")
-qty = col2.number_input("Qty", 1, 100, 1)
-price = col3.number_input("Price", 1.0, 10000.0, 10.0)
+item_name = col1.text_input("Item name")
+item_qty = col2.number_input("Qty", min_value=1, value=1)
+item_price = col3.number_input("Price", min_value=1.0, value=10.0)
 
 if st.button("➕ Add Item"):
-    st.session_state.items.append({
-        "name": name,
-        "qty": qty,
-        "price": price,
-        "amount": qty * price
-    })
+    if item_name.strip():
+        st.session_state["items"].append({
+            "name": item_name,
+            "qty": int(item_qty),
+            "price": float(item_price),
+            "amount": int(item_qty) * float(item_price)
+        })
+    else:
+        st.warning("Enter item name")
+
+
+# ==================================================
+# DISPLAY ITEMS + TOTAL
+# ==================================================
+st.subheader("Current Menu")
 
 total = 0
-for i, item in enumerate(st.session_state.items):
+for item in st.session_state["items"]:
     total += item["amount"]
     st.markdown(f"• {item['name']} × {item['qty']} = ₹ {item['amount']}")
 
 st.markdown(f"### Total: ₹ {total}")
 
-# ---------- PAYMENT INFO ----------
+
+# ==================================================
+# MODE INFO
+# ==================================================
 if TEST_MODE:
-    st.info("TEST MODE ENABLED – No real payment required")
+    st.info("TEST MODE ENABLED – fake payment QR")
 else:
     st.success("REAL PAYMENT MODE ENABLED")
 
-# ---------- DISPLAY ADDED ITEMS ----------
-total = 0
-
-for i, item in enumerate(st.session_state.items):
-    total += item["amount"]
-    st.markdown(f"• {item['name']} × {item['qty']} = ₹ {item['amount']}")
-
-st.markdown(f"### Total: ₹ {total}")
-
-
 
 # ==================================================
-# GENERATE QR
+# GENERATE MENU QR
 # ==================================================
 if st.button("Generate Menu QR"):
-    menu_data = {
-        "shop": shop,
-        "date": str(menu_date),
-        "upi": upi,
-        "items": st.session_state.items,
-        "total": total
-    }
+    if not shop or not upi or not st.session_state["items"]:
+        st.error("Please fill shop name, UPI and add at least one item")
+    else:
+        menu_data = {
+            "shop": shop,
+            "date": str(menu_date),
+            "upi": upi,
+            "items": st.session_state["items"],
+            "total": total
+        }
 
-    encoded = encode_data(menu_data)
-    menu_url = f"{APP_BASE_URL}/?menu={encoded}"
+        encoded = encode_data(menu_data)
+        menu_url = f"{APP_BASE_URL}/?menu={encoded}"
 
-    qr_img = generate_qr(menu_url)
+        qr_img = generate_qr(menu_url)
 
-    st.success("QR Generated")
-    st.image(qr_img)
-    st.download_button("⬇️ Download QR", qr_img, "menu_qr.png", "image/png")
-    st.code(menu_url)
+        st.success("QR Code Generated")
+
+        st.image(qr_img, caption="Scan this QR to view menu")
+
+        st.download_button(
+            "⬇️ Download QR Code",
+            qr_img,
+            "menu_qr.png",
+            "image/png"
+        )
+
+        st.code(menu_url)
