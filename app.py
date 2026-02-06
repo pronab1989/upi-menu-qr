@@ -1,3 +1,10 @@
+
+# ==================================================
+# APP BASE URL (CHANGE THIS ONCE AFTER DEPLOY)
+# ==================================================
+
+APP_BASE_URL = "https://upi-menu-qr.streamlit.app"
+
 # ==================================================
 # CONFIGURATION
 # ==================================================
@@ -228,8 +235,8 @@ if st.button("Generate Menu QR"):
         # Encode menu data
         encoded = encode_data(menu_data)
 
-        # ✅ CORRECT: relative URL (Streamlit handles domain)
-        menu_url = f"?menu={encoded}"
+        # ✅ FULL PUBLIC URL (VERY IMPORTANT)
+        menu_url = f"{APP_BASE_URL}/?menu={encoded}"
 
         # Generate QR
         qr_img = generate_qr(menu_url)
@@ -253,4 +260,5 @@ if st.button("Generate Menu QR"):
 
     except Exception as e:
         st.error(str(e))
+
 
