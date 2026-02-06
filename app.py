@@ -3,7 +3,7 @@
 # APP BASE URL (CHANGE THIS ONCE AFTER DEPLOY)
 # ==================================================
 
-APP_BASE_URL = "https://upi-menu-qr.streamlit.app"
+APP_BASE_URL = "http://upi-menu-qr-trn2jqq8bhc79ktxox4g5e.streamlit.app"
 
 # ==================================================
 # CONFIGURATION
