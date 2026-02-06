@@ -9,7 +9,7 @@ APP_BASE_URL = "http://upi-menu-qr-trn2jqq8bhc79ktxox4g5e.streamlit.app"
 # CONFIGURATION
 # ==================================================
 
-TEST_MODE = True
+TEST_MODE = False
 # ↑↑↑
 # TEST_MODE = True  → fake QR (for testing only)
 # TEST_MODE = False → real UPI payment QR (production)
