@@ -1,0 +1,27 @@
+sports 
+ent
+movies
+sony movie
+info 
+kids
+news
+
+python -m streamlit run app.py
+
+
+git init
+git add .
+git commit -m "Initial full project"
+git branch -M main
+git remote add origin https://github.com/YOURNAME/upi-qr-menu-generator.git
+git push -u origin main
+
+
+
+🔧 FINAL CODE CHANGE FOR PRODUCTION (IMPORTANT)
+
+Once deployed, change nothing.
+
+Your QR generation should be:
+
+menu_url = f"{st.get_url()}?menu={encoded}"
