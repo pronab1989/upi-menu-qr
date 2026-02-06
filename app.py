@@ -1,18 +1,11 @@
-
-# ==================================================
-# APP BASE URL (CHANGE THIS ONCE AFTER DEPLOY)
-# ==================================================
-
-APP_BASE_URL = "http://upi-menu-qr-trn2jqq8bhc79ktxox4g5e.streamlit.app"
-
 # ==================================================
 # CONFIGURATION
 # ==================================================
+APP_BASE_URL = "https://upi-menu-qr-trn2jqq8bhc79ktxox4g5e.streamlit.app"
 
 TEST_MODE = False
-# ↑↑↑
-# TEST_MODE = True  → fake QR (for testing only)
-# TEST_MODE = False → real UPI payment QR (production)
+# True  = Fake payment QR (testing)
+# False = Real UPI QR (production)
 
 
 # ==================================================
@@ -23,179 +16,106 @@ import segno
 import base64
 import json
 import io
-from PIL import Image
 from datetime import date
 
 
 # ==================================================
 # PAGE CONFIG
 # ==================================================
-st.set_page_config(
-    page_title="QR Menu",
-    page_icon="📱",
-    layout="centered"
-)
+st.set_page_config("QR Menu", "📱", layout="centered")
 
 
 # ==================================================
-# CUSTOM CSS (MOBILE FRIENDLY)
+# CSS (CLASSIC CLEAN LOOK)
 # ==================================================
 st.markdown("""
 <style>
-body { background-color: #f8fafc; }
-
-.menu-card {
-    background: white;
-    padding: 16px;
-    border-radius: 14px;
-    margin-bottom: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+.card {
+    background:#ffffff;
+    padding:14px;
+    border-radius:10px;
+    margin-bottom:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.06);
 }
-
-.item-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 16px;
-    margin: 6px 0;
+.row {
+    display:flex;
+    justify-content:space-between;
+    font-size:16px;
 }
-
-.item-name { font-weight: 500; }
-.item-price { font-weight: 600; }
-
-.total-box {
-    background: #ecfeff;
-    padding: 14px;
-    border-radius: 12px;
-    font-size: 18px;
-    font-weight: 700;
-    text-align: center;
-    margin-top: 12px;
+.total {
+    background:#f0fdf4;
+    padding:14px;
+    border-radius:10px;
+    font-size:18px;
+    font-weight:700;
+    text-align:center;
 }
-
-.pay-box {
-    margin-top: 20px;
-    padding: 14px;
-    border-radius: 14px;
-    background: #f1f5f9;
-    text-align: center;
+.pay {
+    margin-top:20px;
+    padding:14px;
+    border-radius:10px;
+    background:#f8fafc;
+    text-align:center;
 }
-
-.small-text {
-    font-size: 12px;
-    color: gray;
+.small {
+    font-size:12px;
+    color:gray;
 }
 </style>
 """, unsafe_allow_html=True)
 
 
 # ==================================================
-# HELPER FUNCTIONS
+# HELPERS
 # ==================================================
-
-def parse_menu(text):
-    """
-    Format:
-    Item, Qty, Price
-    """
-    items = []
-    total = 0
-
-    for line in text.strip().split("\n"):
-        name, qty, price = [x.strip() for x in line.split(",")]
-        qty = int(qty)
-        price = float(price)
-        amount = qty * price
-
-        items.append({
-            "name": name,
-            "qty": qty,
-            "price": price,
-            "amount": amount
-        })
-
-        total += amount
-
-    return items, total
-
-
 def encode_data(data):
-    """Encode menu data into URL-safe string"""
     return base64.urlsafe_b64encode(json.dumps(data).encode()).decode()
 
-
 def decode_data(encoded):
-    """Decode menu data from URL"""
     return json.loads(base64.urlsafe_b64decode(encoded.encode()).decode())
 
-
 def generate_qr(data):
-    """Generate QR image"""
     qr = segno.make(data)
     buf = io.BytesIO()
     qr.save(buf, kind="png", scale=6)
     buf.seek(0)
     return buf
 
-
-def generate_upi_qr(upi_id, amount):
-    """
-    REAL PAYMENT QR
-    Used only when TEST_MODE = False
-    """
-    upi_url = f"upi://pay?pa={upi_id}&am={amount}"
-    return generate_qr(upi_url)
+def generate_upi_qr(upi, amount):
+    return generate_qr(f"upi://pay?pa={upi}&am={amount}")
 
 
 # ==================================================
-# ROUTING (QR SCAN PAGE)
+# ROUTING – CUSTOMER VIEW
 # ==================================================
 params = st.query_params
-
 if "menu" in params:
     data = decode_data(params["menu"])
 
-    st.markdown(f"## {data['shop']}")
-    st.markdown(f"📅 {data['date']}")
+    st.title(data["shop"])
+    st.write(f"📅 {data['date']}")
+    st.divider()
 
-    st.markdown("---")
-
-    # MENU LIST
     for item in data["items"]:
         st.markdown(f"""
-        <div class="menu-card">
-            <div class="item-row">
-                <div class="item-name">
-                    {item['name']} × {item['qty']}
-                </div>
-                <div class="item-price">
-                    ₹ {item['amount']}
-                </div>
+        <div class="card">
+            <div class="row">
+                <div>{item['name']} × {item['qty']}</div>
+                <div>₹ {item['amount']}</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-    # TOTAL
-    st.markdown(f"""
-    <div class="total-box">
-        Total Amount: ₹ {data['total']}
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"<div class='total'>Total: ₹ {data['total']}</div>", unsafe_allow_html=True)
 
-    # PAYMENT SECTION
-    st.markdown("""
-    <div class="pay-box">
-        <strong>Pay Using UPI</strong><br>
-    """, unsafe_allow_html=True)
+    st.markdown("<div class='pay'><b>Pay Using UPI</b><br>", unsafe_allow_html=True)
 
     if TEST_MODE:
-        # 🧪 TEST QR (FAKE)
         st.image(generate_qr("TEST PAYMENT"), width=200)
-        st.markdown("<div class='small-text'>TEST MODE – No real payment</div>", unsafe_allow_html=True)
-
+        st.markdown("<div class='small'>TEST MODE – No real payment</div>", unsafe_allow_html=True)
     else:
-        # 💰 REAL PAYMENT QR
         st.image(generate_upi_qr(data["upi"], data["total"]), width=200)
-        st.markdown(f"<div class='small-text'>UPI ID: {data['upi']}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='small'>UPI: {data['upi']}</div>", unsafe_allow_html=True)
 
     st.stop()
 
@@ -209,56 +129,57 @@ shop = st.text_input("Shop Name")
 menu_date = st.date_input("Date", value=date.today())
 upi = st.text_input("UPI ID / Mobile Number")
 
-menu_text = st.text_area(
-    "Menu (Item, Qty, Price)",
-    placeholder="Tea, 2, 10\nCoffee, 1, 20"
-)
+# ---------- ITEM LIST ----------
+st.subheader("Menu Items")
 
-st.markdown("### 🧪 Test Payment (₹25)")
-st.info("TEST MODE is ON. No real payment required.")
+if "items" not in st.session_state:
+    st.session_state.items = []
+
+col1, col2, col3 = st.columns(3)
+name = col1.text_input("Item")
+qty = col2.number_input("Qty", 1, 100, 1)
+price = col3.number_input("Price", 1.0, 10000.0, 10.0)
+
+if st.button("➕ Add Item"):
+    st.session_state.items.append({
+        "name": name,
+        "qty": qty,
+        "price": price,
+        "amount": qty * price
+    })
+
+total = 0
+for i, item in enumerate(st.session_state.items):
+    total += item["amount"]
+    st.markdown(f"• {item['name']} × {item['qty']} = ₹ {item['amount']}")
+
+st.markdown(f"### Total: ₹ {total}")
+
+# ---------- PAYMENT INFO ----------
+if TEST_MODE:
+    st.info("TEST MODE ENABLED – No real payment required")
+else:
+    st.success("REAL PAYMENT MODE ENABLED")
+
 
 # ==================================================
 # GENERATE QR
 # ==================================================
 if st.button("Generate Menu QR"):
-    try:
-        items, total = parse_menu(menu_text)
+    menu_data = {
+        "shop": shop,
+        "date": str(menu_date),
+        "upi": upi,
+        "items": st.session_state.items,
+        "total": total
+    }
 
-        menu_data = {
-            "shop": shop,
-            "date": str(menu_date),
-            "upi": upi,
-            "items": items,
-            "total": total
-        }
+    encoded = encode_data(menu_data)
+    menu_url = f"{APP_BASE_URL}/?menu={encoded}"
 
-        # Encode menu data
-        encoded = encode_data(menu_data)
+    qr_img = generate_qr(menu_url)
 
-        # ✅ FULL PUBLIC URL (VERY IMPORTANT)
-        menu_url = f"{APP_BASE_URL}/?menu={encoded}"
-
-        # Generate QR
-        qr_img = generate_qr(menu_url)
-
-        st.success("QR Code Generated")
-
-        # Show QR
-        st.image(qr_img, caption="Scan this QR to view menu")
-
-        # Download QR
-        st.download_button(
-            label="⬇️ Download QR Code (PNG)",
-            data=qr_img,
-            file_name="menu_qr.png",
-            mime="image/png"
-        )
-
-        # Optional: show link
-        st.markdown("🔗 Menu Link (for testing):")
-        st.code(menu_url)
-
-    except Exception as e:
-        st.error(str(e))
-
-
+    st.success("QR Generated")
+    st.image(qr_img)
+    st.download_button("⬇️ Download QR", qr_img, "menu_qr.png", "image/png")
+    st.code(menu_url)
