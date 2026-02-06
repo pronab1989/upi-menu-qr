@@ -215,10 +215,8 @@ st.info("TEST MODE is ON. No real payment required.")
 # ==================================================
 if st.button("Generate Menu QR"):
     try:
-        # 1️⃣ Parse menu and calculate total
         items, total = parse_menu(menu_text)
 
-        # 2️⃣ Prepare menu data
         menu_data = {
             "shop": shop,
             "date": str(menu_date),
@@ -227,24 +225,21 @@ if st.button("Generate Menu QR"):
             "total": total
         }
 
-        # 3️⃣ Encode menu data into URL-safe string
+        # Encode menu data
         encoded = encode_data(menu_data)
 
-        # ⚠️ IMPORTANT
-        # For local testing this will work only on same network
-        # After Streamlit Cloud deploy, this becomes public
-        menu_url = f"{st.get_url()}?menu={encoded}"
+        # ✅ CORRECT: relative URL (Streamlit handles domain)
+        menu_url = f"?menu={encoded}"
 
-        # 4️⃣ Generate QR image
+        # Generate QR
         qr_img = generate_qr(menu_url)
 
-        # 5️⃣ UI OUTPUT
         st.success("QR Code Generated")
 
         # Show QR
         st.image(qr_img, caption="Scan this QR to view menu")
 
-        # Download QR for shop owner
+        # Download QR
         st.download_button(
             label="⬇️ Download QR Code (PNG)",
             data=qr_img,
@@ -252,7 +247,7 @@ if st.button("Generate Menu QR"):
             mime="image/png"
         )
 
-        # Optional: show link for testing
+        # Optional: show link
         st.markdown("🔗 Menu Link (for testing):")
         st.code(menu_url)
 
